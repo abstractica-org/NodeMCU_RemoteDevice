@@ -3,7 +3,7 @@
 */
 
 #include <Arduino.h>
-#include "DeviceUDPClient.h"
+#include "RemoteDevice.h"
 
 #define MAX_IDLE_TIME 5000
 #define CONNECTED_SEND_INTERVAL 1000
@@ -18,14 +18,14 @@
 
 bool test = true;
 
-DeviceUDPClient::DeviceUDPClient(uint64_t deviceId, const char* deviceType, uint16_t deviceVersion )
+RemoteDevice::RemoteDevice(uint64_t deviceId, const char* deviceType, uint16_t deviceVersion )
 {
   _deviceId = deviceId;
   _deviceType = deviceType;
   _deviceVersion = deviceVersion;
 }
 
-void DeviceUDPClient::begin(uint16_t port, uint16_t serverPort)
+void RemoteDevice::begin(uint16_t port, uint16_t serverPort)
 {
   _serverAddress = IPAddress(255, 255, 255, 255);
   _serverPort = serverPort;
@@ -43,7 +43,7 @@ void DeviceUDPClient::begin(uint16_t port, uint16_t serverPort)
   sendPacketToServer(INIT, _deviceVersion, 0, _deviceType);
 }
 
-void DeviceUDPClient::update(unsigned long curTime)
+void RemoteDevice::update(unsigned long curTime)
 {
   if(WiFi.isConnected())
   {
@@ -102,12 +102,12 @@ void DeviceUDPClient::update(unsigned long curTime)
   }
 }
 
-void DeviceUDPClient::stop()
+void RemoteDevice::stop()
 {
   BasicUDP::stop();
 }
 
-void DeviceUDPClient::onPacketReceived(unsigned long curTime, IPAddress srcAddress, uint16_t srcPort, uint8_t* pData, uint16_t size)
+void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress, uint16_t srcPort, uint8_t* pData, uint16_t size)
 {
   //Since we have received a package, we assume that wifi is connected...
   if(!_wifiConnected)
@@ -221,7 +221,7 @@ void DeviceUDPClient::onPacketReceived(unsigned long curTime, IPAddress srcAddre
   
 }
 
-uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
+uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
                                               uint8_t* pData,
@@ -231,14 +231,14 @@ uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
 }
 
 
-uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
+uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2       )
 {
   return _sendPacketToServer(command, arg1, arg2, 0, 0, true, false);
 }
 
-uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
+uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
                                               const char* str       )
@@ -246,7 +246,7 @@ uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
   return _sendPacketToServer(command, arg1, arg2, (uint8_t*) str, strlen(str), true, false);
 }
 
-uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
+uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
                                               uint8_t* pData,
@@ -257,7 +257,7 @@ uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
   return _sendPacketToServer(command, arg1, arg2, pData, size, blocking, forceSend);
 }
 
-uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
+uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
                                               bool blocking,
@@ -266,7 +266,7 @@ uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
   return _sendPacketToServer(command, arg1, arg2, 0, 0, true, false);
 }
 
-uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
+uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
                                               const char* str,
@@ -276,7 +276,7 @@ uint16_t DeviceUDPClient::sendPacketToServer( uint16_t command,
   return _sendPacketToServer(command, arg1, arg2, (uint8_t*) str, strlen(str), blocking, forceSend);
 }
 
-uint16_t DeviceUDPClient::_sendPacketToServer(uint16_t command,
+uint16_t RemoteDevice::_sendPacketToServer(uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
                                               uint8_t* pData,
@@ -322,7 +322,7 @@ uint16_t DeviceUDPClient::_sendPacketToServer(uint16_t command,
   return _curMsgId;
 }
 
-void DeviceUDPClient::_sendReplyPacket(uint16_t msgId, uint16_t command, uint16_t arg1, uint16_t arg2, uint8_t* pData, uint16_t size)
+void RemoteDevice::_sendReplyPacket(uint16_t msgId, uint16_t command, uint16_t arg1, uint16_t arg2, uint8_t* pData, uint16_t size)
 {
   _writeIntegerToBuffer(_replyPacket, msgId, 8, 2);
   _writeIntegerToBuffer(_replyPacket, command, 10, 2);
@@ -335,7 +335,7 @@ void DeviceUDPClient::_sendReplyPacket(uint16_t msgId, uint16_t command, uint16_
   sendPacket(_serverAddress, _serverPort, _replyPacket, 16 + size);
 }
 
-void DeviceUDPClient::_writeIntegerToBuffer(uint8_t *buffer, uint64_t data, uint16_t index, uint8_t size)
+void RemoteDevice::_writeIntegerToBuffer(uint8_t *buffer, uint64_t data, uint16_t index, uint8_t size)
 {
   for (uint8_t i = 0; i < size; ++i)
   {
@@ -343,7 +343,7 @@ void DeviceUDPClient::_writeIntegerToBuffer(uint8_t *buffer, uint64_t data, uint
   }
 }
 
-uint64_t DeviceUDPClient::_readIntegerFromBuffer(uint8_t *buffer, uint16_t index, uint8_t size)
+uint64_t RemoteDevice::_readIntegerFromBuffer(uint8_t *buffer, uint16_t index, uint8_t size)
 {
   uint64_t res = 0;
   for (int8_t i = size - 1; i >= 0; --i)

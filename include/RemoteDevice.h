@@ -2,17 +2,17 @@
   Author: Tobias Grundtvig
 */
 
-#ifndef DeviceUDPClient_h
-#define DeviceUDPClient_h
+#ifndef RemoteDevice_h
+#define RemoteDevice_h
 
 #include <Arduino.h>
 #include <ESP8266WiFi.h>
 #include <BasicUDP.h>
 
-class DeviceUDPClient : BasicUDP
+class RemoteDevice : BasicUDP
 {
 public:
-    DeviceUDPClient(uint64_t deviceId, const char* deviceType, uint16_t deviceVersion);
+    RemoteDevice(uint64_t deviceId, const char* deviceType, uint16_t deviceVersion);
     void begin(uint16_t localPort, uint16_t serverPort);
     void update(unsigned long curTime);
     void stop();
