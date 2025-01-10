@@ -1,5 +1,5 @@
 {
-  "name": "NodeMCU_DeviceUDP",
+  "name": "NodeMCU_RemoteDevice",
   "version": "0.1.0",
   "description": "A base class for NodeMCU devices, that connects to an UDP server",
   "keywords": "NodeMCU, Network, UDP",
