@@ -18,7 +18,7 @@
   "license": "MIT",
   "dependencies":
   {
-	  "external-repo": "https://github.com/abstractica-org/NodeMCU_BasicUDP.git#v0.1.0"
+	  "external-repo": "https://github.com/abstractica-org/NodeMCU_BasicUDP.git"
   },
   "frameworks": "arduino",
   "platforms": "espressif8266"
