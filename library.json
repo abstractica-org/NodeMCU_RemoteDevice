@@ -1,0 +1,25 @@
+{
+  "name": "NodeMCU_DeviceUDP",
+  "version": "0.1.0",
+  "description": "A base class for NodeMCU devices, that connects to an UDP server",
+  "keywords": "NodeMCU, Network, UDP",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/abstractica-org/NodeMCU_RemoteDevice"
+  },
+  "authors":
+  [
+    {
+      "name": "Tobias Grundtvig",
+      "email": "tgrundtvig@gmail.com"
+    }
+  ],
+  "license": "MIT",
+  "dependencies":
+  {
+	  "external-repo": "https://github.com/abstractica-org/NodeMCU_BasicUDP.git#v0.1.0"
+  },
+  "frameworks": "arduino",
+  "platforms": "espressif8266"
+}
