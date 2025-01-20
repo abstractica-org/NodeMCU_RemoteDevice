@@ -201,7 +201,7 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
     Serial.print("Arg1: ");
     Serial.print(arg1);
     Serial.print("Arg2: ");
-    Serial.print(arg2);
+    Serial.println(arg2);
 
     _lastResponse = onPacketReceived(command, arg1, arg2, pData+16, size-16);
     _sendReplyPacket(msgId, MSGACK, _lastResponse, 0, 0, 0);
