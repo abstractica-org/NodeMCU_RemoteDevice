@@ -164,6 +164,7 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
   //Handle PING from server
   if(command == PING)
   {
+    Serial.println("PING!");
     _sendReplyPacket(msgId, MSGACK, 0, 0, 0, 0);
     return;
   }
@@ -171,6 +172,7 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
   //Handle MSGACK
   if(command == MSGACK)
   {
+    Serial.println("MSGACK!");
     if(_isSending && msgId == _curMsgId)
     {
       //This is a MSGACK for the current message
@@ -194,6 +196,13 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
     _lastReceivedMsgId = msgId;
     uint16_t arg1 = _readIntegerFromBuffer(pData, 12, 2);
     uint16_t arg2 = _readIntegerFromBuffer(pData, 14, 2);
+    Serial.print("CMD: ");
+    Serial.print(command);
+    Serial.print("Arg1: ");
+    Serial.print(arg1);
+    Serial.print("Arg2: ");
+    Serial.print(arg2);
+
     _lastResponse = onPacketReceived(command, arg1, arg2, pData+16, size-16);
     _sendReplyPacket(msgId, MSGACK, _lastResponse, 0, 0, 0);
   }
