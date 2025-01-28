@@ -39,8 +39,10 @@ void RemoteDevice::begin(uint16_t port, uint16_t serverPort)
 
   _writeIntegerToBuffer(_replyPacket, _deviceId, 0, 8);
   BasicUDP::begin(port);
+  #ifdef REMOTE_DEVICE_DEBUG
   Serial.println("Sending inital package to server!");
-  sendPacketToServer(INIT, _deviceVersion, 0, _deviceType);
+  #endif
+  sendPacketToServer(INIT, _deviceVersion, 0, 0, 0, _deviceType);
 }
 
 void RemoteDevice::update(unsigned long curTime)
@@ -63,11 +65,12 @@ void RemoteDevice::update(unsigned long curTime)
         {
           _serverConnected = false;
           _serverAddress = IPAddress(255, 255, 255, 255);
+          #ifdef REMOTE_DEVICE_DEBUG
           Serial.print("timeSinceLastSend: ");
           Serial.print(timeSinceLastSend);
           Serial.print(", _sentCount: ");
           Serial.println(_sentCount);
-          
+          #endif
           onServerDisconnected(curTime);
           return;
         }
@@ -83,7 +86,7 @@ void RemoteDevice::update(unsigned long curTime)
       if(timeSinceLastReceive >= MAX_IDLE_TIME)
       {
         //Send PING packet
-        _sendPacketToServer(PING, 0, 0, 0, 0, false, false);
+        _sendPacketToServer(PING, 0, 0, 0, 0, 0, 0, false, false);
       }
     }
   }
@@ -115,16 +118,22 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
     _wifiConnected = true;
     onWiFiConnected(curTime);
   }
+  #ifdef REMOTE_DEVICE_DEBUG
   Serial.print("Packet received: ");
-  if(size < 16)
+  #endif
+  if(size < 20)
   {
+    #ifdef REMOTE_DEVICE_DEBUG
     Serial.println("Packet too small");
+    #endif
     return;
   }
   uint64_t deviceId = _readIntegerFromBuffer(pData, 0, 8);
   if(_deviceId != deviceId)
   {
+    #ifdef REMOTE_DEVICE_DEBUG
     Serial.println("Packet not for us!");
+    #endif
     return;
   }
   //We assume that the packet comes from the server since it has the correct Device ID in the header
@@ -150,12 +159,16 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
     _sentCount = 0;
     if(command == INIT)
     {
+      #ifdef REMOTE_DEVICE_DEBUG
       Serial.println("INIT received!");
-      _sendReplyPacket(msgId, INITACK, _deviceVersion, 0, (uint8_t*) _deviceType, strlen(_deviceType));
+      #endif
+      _sendReplyPacket(msgId, INITACK, _deviceVersion, 0, 0, 0, (uint8_t*) _deviceType, strlen(_deviceType));
     }
     else
     {
+      #ifdef REMOTE_DEVICE_DEBUG
       Serial.println("INITACK received!");
+      #endif
       _isSending = false;
     }
     return;
@@ -164,15 +177,19 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
   //Handle PING from server
   if(command == PING)
   {
+    #ifdef REMOTE_DEVICE_DEBUG
     Serial.println("PING!");
-    _sendReplyPacket(msgId, MSGACK, 0, 0, 0, 0);
+    #endif
+    _sendReplyPacket(msgId, MSGACK, 0, 0, 0, 0, 0, 0);
     return;
   }
 
   //Handle MSGACK
   if(command == MSGACK)
   {
+    #ifdef REMOTE_DEVICE_DEBUG
     Serial.println("MSGACK!");
+    #endif
     if(_isSending && msgId == _curMsgId)
     {
       //This is a MSGACK for the current message
@@ -196,15 +213,22 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
     _lastReceivedMsgId = msgId;
     uint16_t arg1 = _readIntegerFromBuffer(pData, 12, 2);
     uint16_t arg2 = _readIntegerFromBuffer(pData, 14, 2);
+    uint16_t arg3 = _readIntegerFromBuffer(pData, 16, 2);
+    uint16_t arg4 = _readIntegerFromBuffer(pData, 18, 2);
+    #ifdef REMOTE_DEVICE_DEBUG
     Serial.print("CMD: ");
     Serial.print(command);
     Serial.print("Arg1: ");
     Serial.print(arg1);
     Serial.print("Arg2: ");
     Serial.println(arg2);
-
-    _lastResponse = onPacketReceived(command, arg1, arg2, pData+16, size-16);
-    _sendReplyPacket(msgId, MSGACK, _lastResponse, 0, 0, 0);
+    Serial.print("Arg3: ");
+    Serial.print(arg3);
+    Serial.print("Arg4: ");
+    Serial.println(arg4);
+    #endif
+    _lastResponse = onPacketReceived(command, arg1, arg2, arg3, arg4, pData+20, size-20);
+    _sendReplyPacket(msgId, MSGACK, _lastResponse, 0, 0, 0, 0, 0);
   }
   else
   {
@@ -212,11 +236,14 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
     if(msgId == _lastReceivedMsgId)
     {
       //It is the latest message that we have already proccessed, so we just resend the result.
+      #ifdef REMOTE_DEVICE_DEBUG
       Serial.print("Resending message acknowledgement (msgId: ");
       Serial.print(msgId);
       Serial.println(").");
-      _sendReplyPacket(msgId, MSGACK, _lastResponse, 0, 0, 0);
+      #endif
+      _sendReplyPacket(msgId, MSGACK, _lastResponse, 0, 0, 0, 0, 0);
     }
+    #ifdef REMOTE_DEVICE_DEBUG
     else
     {
       //This is an older "ghost" message, so we just report it and ignore it.
@@ -226,6 +253,7 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
       Serial.print(_lastReceivedMsgId);
       Serial.println(")");
     }
+    #endif
   }
   
 }
@@ -233,61 +261,75 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
 uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
+                                              uint16_t arg3,
+                                              uint16_t arg4,
                                               uint8_t* pData,
                                               uint16_t size      )
 {
-  return _sendPacketToServer(command, arg1, arg2, pData, size, true, false);
+  return _sendPacketToServer(command, arg1, arg2, arg3, arg4, pData, size, true, false);
 }
 
 
 uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
-                                              uint16_t arg2       )
+                                              uint16_t arg2,
+                                              uint16_t arg3,
+                                              uint16_t arg4       )
 {
-  return _sendPacketToServer(command, arg1, arg2, 0, 0, true, false);
+  return _sendPacketToServer(command, arg1, arg2, arg3, arg4, 0, 0, true, false);
 }
 
 uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
+                                              uint16_t arg3,
+                                              uint16_t arg4, 
                                               const char* str       )
 {
-  return _sendPacketToServer(command, arg1, arg2, (uint8_t*) str, strlen(str), true, false);
+  return _sendPacketToServer(command, arg1, arg2, arg3, arg4, (uint8_t*) str, strlen(str), true, false);
 }
 
 uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
+                                              uint16_t arg3,
+                                              uint16_t arg4, 
                                               uint8_t* pData,
                                               uint16_t size,
                                               bool blocking,
                                               bool forceSend)
 { 
-  return _sendPacketToServer(command, arg1, arg2, pData, size, blocking, forceSend);
+  return _sendPacketToServer(command, arg1, arg2, arg3, arg4, pData, size, blocking, forceSend);
 }
 
 uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
+                                              uint16_t arg3,
+                                              uint16_t arg4,
                                               bool blocking,
                                               bool forceSend)
 {
-  return _sendPacketToServer(command, arg1, arg2, 0, 0, true, false);
+  return _sendPacketToServer(command, arg1, arg2, arg3, arg4, 0, 0, true, false);
 }
 
 uint16_t RemoteDevice::sendPacketToServer( uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
+                                              uint16_t arg3,
+                                              uint16_t arg4,
                                               const char* str,
                                               bool blocking,
                                               bool forceSend)
 { 
-  return _sendPacketToServer(command, arg1, arg2, (uint8_t*) str, strlen(str), blocking, forceSend);
+  return _sendPacketToServer(command, arg1, arg2, arg3, arg4, (uint8_t*) str, strlen(str), blocking, forceSend);
 }
 
 uint16_t RemoteDevice::_sendPacketToServer(uint16_t command,
                                               uint16_t arg1,
                                               uint16_t arg2,
+                                              uint16_t arg3,
+                                              uint16_t arg4,
                                               uint8_t* pData,
                                               uint16_t size,
                                               bool blocking,
@@ -314,16 +356,18 @@ uint16_t RemoteDevice::_sendPacketToServer(uint16_t command,
   _writeIntegerToBuffer(_sendBuffer, command, 10, 2);
   _writeIntegerToBuffer(_sendBuffer, arg1, 12, 2);
   _writeIntegerToBuffer(_sendBuffer, arg2, 14, 2);
+  _writeIntegerToBuffer(_sendBuffer, arg1, 16, 2);
+  _writeIntegerToBuffer(_sendBuffer, arg2, 18, 2);
   for(int i = 0; i < size; ++i)
   {
-    _sendBuffer[16+i] = pData[i];
+    _sendBuffer[20+i] = pData[i];
   }
 
   //Setting the packet meta info:
   _isSending = true;
   _isBlocking = blocking;
   _sentCount = 1;
-  _sendBufferSize = 16 + size;
+  _sendBufferSize = 20 + size;
   _lastSentTime = millis();
 
   //First send attempt:
@@ -331,17 +375,19 @@ uint16_t RemoteDevice::_sendPacketToServer(uint16_t command,
   return _curMsgId;
 }
 
-void RemoteDevice::_sendReplyPacket(uint16_t msgId, uint16_t command, uint16_t arg1, uint16_t arg2, uint8_t* pData, uint16_t size)
+void RemoteDevice::_sendReplyPacket(uint16_t msgId, uint16_t command, uint16_t arg1, uint16_t arg2, uint16_t arg3, uint16_t arg4, uint8_t* pData, uint16_t size)
 {
   _writeIntegerToBuffer(_replyPacket, msgId, 8, 2);
   _writeIntegerToBuffer(_replyPacket, command, 10, 2);
   _writeIntegerToBuffer(_replyPacket, arg1, 12, 2);
   _writeIntegerToBuffer(_replyPacket, arg2, 14, 2);
+  _writeIntegerToBuffer(_replyPacket, arg1, 16, 2);
+  _writeIntegerToBuffer(_replyPacket, arg2, 18, 2);
   for(int i = 0; i < size; ++i)
   {
-    _replyPacket[16+i] = pData[i];
+    _replyPacket[20+i] = pData[i];
   }
-  sendPacket(_serverAddress, _serverPort, _replyPacket, 16 + size);
+  sendPacket(_serverAddress, _serverPort, _replyPacket, 20 + size);
 }
 
 void RemoteDevice::_writeIntegerToBuffer(uint8_t *buffer, uint64_t data, uint16_t index, uint8_t size)

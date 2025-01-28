@@ -9,6 +9,8 @@
 #include <ESP8266WiFi.h>
 #include <BasicUDP.h>
 
+#define REMOTE_DEVICE_DEBUG
+
 class RemoteDevice : BasicUDP
 {
 public:
@@ -22,6 +24,8 @@ public:
     uint16_t sendPacketToServer(uint16_t command,
                                 uint16_t arg1,
                                 uint16_t arg2,
+                                uint16_t arg3,
+                                uint16_t arg4,
                                 uint8_t* pData,
                                 uint16_t size,
                                 bool blocking,
@@ -30,6 +34,8 @@ public:
     uint16_t sendPacketToServer(uint16_t command,
                                 uint16_t arg1,
                                 uint16_t arg2,
+                                uint16_t arg3,
+                                uint16_t arg4,
                                 const char* str,
                                 bool blocking,
                                 bool forceSend      );
@@ -37,48 +43,65 @@ public:
     uint16_t sendPacketToServer(uint16_t command,
                                 uint16_t arg1,
                                 uint16_t arg2,
+                                uint16_t arg3,
+                                uint16_t arg4,
                                 bool blocking,
                                 bool forceSend      );
 
     uint16_t sendPacketToServer(uint16_t command,
                                 uint16_t arg1,
                                 uint16_t arg2,
+                                uint16_t arg3,
+                                uint16_t arg4,
                                 uint8_t* pData,
                                 uint16_t size       );
 
     uint16_t sendPacketToServer(uint16_t command,
                                 uint16_t arg1,
-                                uint16_t arg2       );
+                                uint16_t arg2,
+                                uint16_t arg3,
+                                uint16_t arg4       );
 
     uint16_t sendPacketToServer(uint16_t command,
                                 uint16_t arg1,
                                 uint16_t arg2,
+                                uint16_t arg3,
+                                uint16_t arg4,
                                 const char *str);
 
     
     virtual void onPacketDelivered(uint16_t msgId, uint16_t response)
     {
+        #ifdef REMOTE_DEVICE_DEBUG
         Serial.print("Packet delivered: (msgId: ");
         Serial.print(msgId);
         Serial.print(", response: ");
         Serial.print(response);
         Serial.println(")");
+        #endif
     }
 
     virtual void onPacketCancelled(uint16_t msgId)
     {
+        #ifdef REMOTE_DEVICE_DEBUG
         Serial.print("Packet cancelled: ");
         Serial.println(msgId);
+        #endif
     }
 
-    virtual uint16_t onPacketReceived(uint16_t command, uint16_t arg1, uint16_t arg2, uint8_t* pData, uint16_t size)
+    virtual uint16_t onPacketReceived(uint16_t command, uint16_t arg1, uint16_t arg2,uint16_t arg3, uint16_t arg4, uint8_t* pData, uint16_t size)
     {
+        #ifdef REMOTE_DEVICE_DEBUG
         Serial.print("Packet received from server: (command: ");
         Serial.print(command);
         Serial.print(", argument 1: ");
         Serial.print(arg1);
         Serial.print(", argument 2: ");
         Serial.print(arg2);
+        Serial.print(", argument 3: ");
+        Serial.print(arg3);
+        Serial.print(", argument 4: ");
+        Serial.print(arg4);
         Serial.print(", packetsize: ");
         Serial.print(size);
         Serial.println(")");
@@ -93,27 +116,36 @@ public:
             Serial.println("}");
         }
         Serial.println();
+        #endif
         return command;
     }
 
     virtual void onWiFiConnected(long curTime)
     {
+        #ifdef REMOTE_DEVICE_DEBUG
         Serial.println("WiFi connected!");
+        #endif
     }
 
     virtual void onWiFiDisconnected(long curTime)
     {
+        #ifdef REMOTE_DEVICE_DEBUG
         Serial.println("WiFi disconnected!");
+        #endif
     }
 
     virtual void onServerConnected(long curTime)
     {
+        #ifdef REMOTE_DEVICE_DEBUG
         Serial.println("Server connected!");
+        #endif
     }
 
     virtual void onServerDisconnected(long curTime)
     {
+        #ifdef REMOTE_DEVICE_DEBUG
         Serial.println("Server disconnected!");
+        #endif
     }
     
 protected:
@@ -123,8 +155,8 @@ protected:
 private:
     void onPacketReceived(unsigned long curTime, IPAddress srcAddress, uint16_t srcPort, uint8_t* pData, uint16_t size);
     uint16_t _sendPingToServer();
-    uint16_t _sendPacketToServer(uint16_t command, uint16_t arg1, uint16_t arg2, uint8_t* pData, uint16_t size, bool blocking, bool forceSend);
-    void _sendReplyPacket(uint16_t msgId, uint16_t command, uint16_t arg1, uint16_t arg2, uint8_t* pData, uint16_t size);
+    uint16_t _sendPacketToServer(uint16_t command, uint16_t arg1, uint16_t arg2, uint16_t arg3, uint16_t arg4,  uint8_t* pData, uint16_t size, bool blocking, bool forceSend);
+    void _sendReplyPacket(uint16_t msgId, uint16_t command, uint16_t arg1, uint16_t arg2, uint16_t arg3, uint16_t arg4, uint8_t* pData, uint16_t size);
     IPAddress _serverAddress;
     uint16_t _serverPort;
     uint64_t _deviceId;
