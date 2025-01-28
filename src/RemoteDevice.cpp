@@ -27,8 +27,14 @@ RemoteDevice::RemoteDevice(uint64_t deviceId, const char* deviceType, uint16_t d
 
 void RemoteDevice::begin(uint16_t port, uint16_t serverPort)
 {
+  begin(port, serverPort, 0);
+}
+
+void RemoteDevice::begin(uint16_t port, uint16_t serverPort, uint16_t serverId)
+{
   _serverAddress = IPAddress(255, 255, 255, 255);
   _serverPort = serverPort;
+  _serverId = serverId;
   _serverConnected = false;
   _wifiConnected = false;
   _isSending = false;
@@ -42,7 +48,7 @@ void RemoteDevice::begin(uint16_t port, uint16_t serverPort)
   #ifdef REMOTE_DEVICE_DEBUG
   Serial.println("Sending inital package to server!");
   #endif
-  sendPacketToServer(INIT, _deviceVersion, 0, 0, 0, _deviceType);
+  sendPacketToServer(INIT, _deviceVersion, _serverId, 0, 0, _deviceType);
 }
 
 void RemoteDevice::update(unsigned long curTime)

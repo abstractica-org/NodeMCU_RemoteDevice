@@ -9,13 +9,14 @@
 #include <ESP8266WiFi.h>
 #include <BasicUDP.h>
 
-#define REMOTE_DEVICE_DEBUG
+//#define REMOTE_DEVICE_DEBUG
 
 class RemoteDevice : BasicUDP
 {
 public:
     RemoteDevice(uint64_t deviceId, const char* deviceType, uint16_t deviceVersion);
     void begin(uint16_t localPort, uint16_t serverPort);
+    void begin(uint16_t localPort, uint16_t serverPort, uint16_t serverId);
     void update(unsigned long curTime);
     void stop();
     bool readyToSendPacketToServer();
@@ -117,7 +118,7 @@ public:
         }
         Serial.println();
         #endif
-        return command;
+        return 0;
     }
 
     virtual void onWiFiConnected(long curTime)
@@ -159,6 +160,7 @@ private:
     void _sendReplyPacket(uint16_t msgId, uint16_t command, uint16_t arg1, uint16_t arg2, uint16_t arg3, uint16_t arg4, uint8_t* pData, uint16_t size);
     IPAddress _serverAddress;
     uint16_t _serverPort;
+    uint16_t _serverId;
     uint64_t _deviceId;
     const char* _deviceType;
     uint16_t _deviceVersion;
