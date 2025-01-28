@@ -168,7 +168,7 @@ void RemoteDevice::onPacketReceived(unsigned long curTime, IPAddress srcAddress,
       #ifdef REMOTE_DEVICE_DEBUG
       Serial.println("INIT received!");
       #endif
-      _sendReplyPacket(msgId, INITACK, _deviceVersion, 0, 0, 0, (uint8_t*) _deviceType, strlen(_deviceType));
+      _sendReplyPacket(msgId, INITACK, _deviceVersion, _serverId, 0, 0, (uint8_t*) _deviceType, strlen(_deviceType));
     }
     else
     {
