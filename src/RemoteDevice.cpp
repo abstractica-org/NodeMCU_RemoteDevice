@@ -356,8 +356,8 @@ uint16_t RemoteDevice::_sendPacketToServer(uint16_t command,
   _writeIntegerToBuffer(_sendBuffer, command, 10, 2);
   _writeIntegerToBuffer(_sendBuffer, arg1, 12, 2);
   _writeIntegerToBuffer(_sendBuffer, arg2, 14, 2);
-  _writeIntegerToBuffer(_sendBuffer, arg1, 16, 2);
-  _writeIntegerToBuffer(_sendBuffer, arg2, 18, 2);
+  _writeIntegerToBuffer(_sendBuffer, arg3, 16, 2);
+  _writeIntegerToBuffer(_sendBuffer, arg4, 18, 2);
   for(int i = 0; i < size; ++i)
   {
     _sendBuffer[20+i] = pData[i];
@@ -381,8 +381,8 @@ void RemoteDevice::_sendReplyPacket(uint16_t msgId, uint16_t command, uint16_t a
   _writeIntegerToBuffer(_replyPacket, command, 10, 2);
   _writeIntegerToBuffer(_replyPacket, arg1, 12, 2);
   _writeIntegerToBuffer(_replyPacket, arg2, 14, 2);
-  _writeIntegerToBuffer(_replyPacket, arg1, 16, 2);
-  _writeIntegerToBuffer(_replyPacket, arg2, 18, 2);
+  _writeIntegerToBuffer(_replyPacket, arg3, 16, 2);
+  _writeIntegerToBuffer(_replyPacket, arg4, 18, 2);
   for(int i = 0; i < size; ++i)
   {
     _replyPacket[20+i] = pData[i];
